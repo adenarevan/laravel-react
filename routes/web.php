@@ -7,6 +7,8 @@ use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+
+use App\Http\Controllers\Auth\PasswordResetController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -27,9 +29,11 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Route::get('/dashboard', function () {
+//     return Inertia::render('Dashboard');
+// })->middleware(['auth', 'verified'])->name('dashboard');
+
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -84,9 +88,13 @@ Route::get('/auth/google/callback', function () {
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard', [
         'user' => Auth::user(),
+        'menus' => [
+            ['name' => 'Home', 'route' => '/dashboard', 'icon' => 'FaHome'], // Halaman utama
+            ['name' => 'About Me', 'route' => '/about', 'icon' => 'FaUser'], // Tentang pengguna
+            ['name' => 'Contact', 'route' => '/contact', 'icon' => 'FaEnvelope'], // Halaman kontak
+        ],
     ]);
 })->middleware(['auth'])->name('dashboard');
-
 
 
 Route::post('/logout', function () {
@@ -95,6 +103,32 @@ Route::post('/logout', function () {
 })->name('logout');
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
+
+
+Route::post('/register', [AuthController::class, 'register'])->name('register');
+
+
+
+
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+
+
+Route::middleware('auth')->get('/api/user', function () {
+    return response()->json(Auth::user());
+})->name('api.user');
+
+
+Route::get('/about', function () {
+    return Inertia::render('About', [
+        'user' => Auth::user(),
+        'menus' => [
+            ['name' => 'Home', 'route' => '/dashboard', 'icon' => 'FaHome'],
+            ['name' => 'About Me', 'route' => '/about', 'icon' => 'FaUser'],
+            ['name' => 'Contact', 'route' => '/contact', 'icon' => 'FaEnvelope'],
+        ],
+    ]);
+})->middleware(['auth'])->name('about');
+
 
 
 require __DIR__.'/auth.php';

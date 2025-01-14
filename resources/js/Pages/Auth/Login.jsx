@@ -2,60 +2,97 @@ import { useEffect, useState } from 'react';
 import { Head } from '@inertiajs/react';
 import { toast } from 'react-toastify'; // Tambahkan import Toastify di file Login
 
-
 export default function Login({ status, canResetPassword }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [remember, setRemember] = useState(false);
     const [error, setError] = useState(null);
     const [isForgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+    const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+    const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
+    const [forgotPasswordError, setForgotPasswordError] = useState('');
 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
+        try {
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({ email, password, remember }),
+            });
 
-const handleSubmit = async (e) => {
-    e.preventDefault();
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Login failed:', errorData);
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                // Notifikasi biru cerah untuk error
+                toast.error('Login gagal! Silakan coba lagi atau periksa password dan email.', {
+                    className: 'bg-blue-500 text-white font-bold text-center',
+                    progressClassName: 'bg-blue-300',
+                    autoClose: 3000,
+                });
+            } else {
+                const data = await response.json();
+                console.log('Login successful:', data);
 
-    try {
-        const response = await fetch('/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-            },
-            body: JSON.stringify({ email, password, remember }),
-        });
+                // Redirect ke dashboard
+                window.location.href = '/dashboard';
+            }
+        } catch (error) {
+            console.error('Error during login:', error);
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Login failed:", errorData);
-
-            // Notifikasi biru cerah untuk error
-            toast.error("Login gagal! Silakan coba lagi.", {
-                className: "bg-blue-500 text-white font-bold text-center",
-                progressClassName: "bg-blue-300",
+            // Notifikasi biru cerah jika terjadi error server
+            toast.error('Terjadi kesalahan pada server.', {
+                className: 'bg-blue-500 text-white font-bold text-center',
+                progressClassName: 'bg-blue-300',
                 autoClose: 3000,
             });
-        } else {
-            const data = await response.json();
-            console.log("Login successful:", data);
-
-            // Redirect ke dashboard
-            window.location.href = '/dashboard';
         }
-    } catch (error) {
-        console.error("Error during login:", error);
-
-        // Notifikasi biru cerah jika terjadi error server
-        toast.error("Terjadi kesalahan pada server.", {
-            className: "bg-blue-500 text-white font-bold text-center",
-            progressClassName: "bg-blue-300",
-            autoClose: 3000,
-        });
-    }
-};
+    };
+    const handleForgotPassword = async () => {
+        if (!forgotPasswordEmail || !forgotPasswordEmail.includes('@')) {
+            setForgotPasswordError('Please enter a valid email address.');
+            return;
+        }
+    
+        try {
+            // Ambil CSRF token dari meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+            const response = await fetch('/forgot-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken, // Kirim CSRF token di header
+                },
+                body: JSON.stringify({ email: forgotPasswordEmail }),
+            });
+    
+            const data = await response.json();
+    
+            if (response.ok) {
+                setForgotPasswordMessage('Password reset link sent to your email.');
+                setForgotPasswordError('');
+                toast.success('Link reset password berhasil dikirim!');
+            } else {
+                setForgotPasswordMessage('');
+                setForgotPasswordError(data.message || 'Failed to send reset link.');
+                toast.error(data.message || 'Gagal mengirim link reset password.');
+            }
+        } catch (error) {
+            setForgotPasswordMessage('');
+            setForgotPasswordError('An error occurred. Please try again.');
+            toast.error('Terjadi kesalahan saat mengirim link reset password.');
+        }
+    };
+    
+    
 
     const handleGoogleLogin = () => {
         // Redirect to Google login route
@@ -149,7 +186,15 @@ const handleSubmit = async (e) => {
                             Sign In
                         </button>
                     </div>
-                </form>
+
+                <p className="text-sm text-gray-600">
+                    Don't have an account?{' '}
+                    <a href="/register" className="text-pink-600 hover:text-pink-500">
+                        Register here
+                    </a>
+                </p>
+
+                                </form>
 
                 <div className="mt-6 text-center">
                     <p className="text-sm text-gray-600">Or continue with</p>
@@ -170,15 +215,28 @@ const handleSubmit = async (e) => {
                 </div>
             </div>
 
-            {isForgotPasswordOpen && (
+
+ {/* Modal Forgot Password */}
+ {isForgotPasswordOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
                     <div className="bg-white rounded-lg p-6 shadow-xl w-96">
                         <h2 className="text-xl font-bold mb-4">Reset Password</h2>
                         <p className="text-sm text-gray-600 mb-4">
                             Enter your email address to receive a password reset link.
                         </p>
+
+                        {forgotPasswordMessage && (
+                            <p className="text-green-600 text-sm mb-4">{forgotPasswordMessage}</p>
+                        )}
+
+                        {forgotPasswordError && (
+                            <p className="text-red-600 text-sm mb-4">{forgotPasswordError}</p>
+                        )}
+
                         <input
                             type="email"
+                            value={forgotPasswordEmail}
+                            onChange={(e) => setForgotPasswordEmail(e.target.value)}
                             placeholder="you@example.com"
                             className="w-full p-2 border rounded mb-4"
                         />
@@ -189,7 +247,10 @@ const handleSubmit = async (e) => {
                             >
                                 Cancel
                             </button>
-                            <button className="px-4 py-2 bg-pink-600 text-white rounded">
+                            <button
+                                className="px-4 py-2 bg-pink-600 text-white rounded"
+                                onClick={handleForgotPassword}
+                            >
                                 Send Link
                             </button>
                         </div>

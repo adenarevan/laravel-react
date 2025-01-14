@@ -29,24 +29,64 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+     public function register(Request $request)
+     {
+         $request->validate([
+             'name' => 'required|string|max:255',
+             'email' => 'required|email|max:255',
+             'password' => 'required|string|confirmed|min:8',
+         ]);
+     
+         // Check if email already exists
+         if (User::where('email', $request->email)->exists()) {
+             return response()->json([
+                 'message' => 'User already registered',
+             ], 409);
+         }
+     
+         $user = User::create([
+             'name' => $request->name,
+             'email' => $request->email,
+             'password' => Hash::make($request->password),
+         ]);
+     
+         Auth::login($user);
+     
+         return response()->json([
+             'message' => 'Registration successful',
+             'redirect' => '/dashboard',
+         ]);
+     }
 
-        event(new Registered($user));
+     public function store(Request $request)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
+        'password' => 'required|string|confirmed|min:8',
+    ]);
 
-        Auth::login($user);
-
-        return redirect(RouteServiceProvider::HOME);
+    // Check if email already exists
+    if (User::where('email', $request->email)->exists()) {
+        return response()->json([
+            'message' => 'User already registered',
+        ], 409);
     }
+
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+    ]);
+
+    Auth::login($user);
+
+    return response()->json([
+        'message' => 'Registration successful',
+        'redirect' => '/dashboard',
+    ]);
+}
+
+     
 }
