@@ -7,7 +7,7 @@ use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Auth\PasswordResetController;
 
 
@@ -133,6 +133,17 @@ Route::get('/about', function () {
     ]);
 })->middleware(['auth'])->name('about');
 
+
+
+
+Route::get('/db-test', function () {
+    try {
+        DB::connection()->getPdo();
+        return "Connected to database: " . DB::connection()->getDatabaseName();
+    } catch (\Exception $e) {
+        return "Connection failed: " . $e->getMessage();
+    }
+});
 
 
 require __DIR__.'/auth.php';
