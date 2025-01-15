@@ -15,6 +15,11 @@
             rel="stylesheet"
             href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
             />
+<!-- Font Awesome -->
+<link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    rel="stylesheet"
+/>
 
 
         <!-- Scripts -->

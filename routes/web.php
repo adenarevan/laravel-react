@@ -9,6 +9,9 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 use App\Http\Controllers\Auth\PasswordResetController;
+
+
+use App\Http\Controllers\AuthController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -101,6 +104,7 @@ Route::post('/logout', function () {
     Auth::logout();
     return redirect('/login');
 })->name('logout');
+
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 

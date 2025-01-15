@@ -10,28 +10,32 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        // Validasi input
+        \Log::info('Login endpoint hit', ['data' => $request->all()]);
+    
         $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
-
-        // Coba login
+    
+        \Log::info('Credentials after validation', $credentials);
+    
         if (Auth::attempt($credentials, $request->remember)) {
-            $request->session()->regenerate(); // Regenerasi session untuk keamanan
-
+            \Log::info('Login successful', ['user' => Auth::user()]);
+            $request->session()->regenerate();
+    
             return response()->json([
                 'message' => 'Login berhasil!',
                 'redirect' => '/dashboard',
             ]);
         }
-
-        // Jika gagal login
+    
+        \Log::error('Login failed: invalid credentials', $credentials);
+    
         throw ValidationException::withMessages([
             'email' => 'The provided credentials are incorrect.',
         ]);
     }
-
+    
 
     public function register(Request $request)
     {
