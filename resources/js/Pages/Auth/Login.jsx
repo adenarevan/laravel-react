@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Head } from '@inertiajs/react';
 import { toast } from 'react-toastify'; // Tambahkan import Toastify di file Login
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Login({ status, canResetPassword }) {
     const [email, setEmail] = useState('');
@@ -12,11 +13,12 @@ export default function Login({ status, canResetPassword }) {
     const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
     const [forgotPasswordError, setForgotPasswordError] = useState('');
 
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
+    
         try {
             const response = await fetch('/login', {
                 method: 'POST',
@@ -26,28 +28,38 @@ export default function Login({ status, canResetPassword }) {
                 },
                 body: JSON.stringify({ email, password, remember }),
             });
-
+    
             if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Login failed:', errorData);
-
-                // Notifikasi biru cerah untuk error
-                toast.error('Login gagal! Silakan coba lagi atau periksa password dan email.', {
+                let errorData = {};
+                try {
+                    // Pastikan respons dapat di-parse menjadi JSON
+                    errorData = await response.json();
+                } catch (e) {
+                    console.error('Error parsing JSON:', e);
+                }
+    
+          //      console.error('Login failed:', errorData);
+    
+                // Gunakan pesan error dari server jika ada, jika tidak gunakan default
+                const message = errorData.error || 'Login gagal! Silakan coba lagi atau periksa password dan email.';
+                toast.error(message, {
                     className: 'bg-blue-500 text-white font-bold text-center',
                     progressClassName: 'bg-blue-300',
                     autoClose: 3000,
                 });
-            } else {
-                const data = await response.json();
-                console.log('Login successful:', data);
-
-                // Redirect ke dashboard
-                window.location.href = '/dashboard';
+    
+                return; // Hentikan eksekusi jika login gagal
             }
+    
+            const data = await response.json();
+            console.log('Login successful:', data);
+    
+            // Redirect ke dashboard
+            window.location.href = '/dashboard';
         } catch (error) {
             console.error('Error during login:', error);
-
-            // Notifikasi biru cerah jika terjadi error server
+    
+            // Notifikasi untuk error di server
             toast.error('Terjadi kesalahan pada server.', {
                 className: 'bg-blue-500 text-white font-bold text-center',
                 progressClassName: 'bg-blue-300',
@@ -55,6 +67,9 @@ export default function Login({ status, canResetPassword }) {
             });
         }
     };
+
+    
+    
     const handleForgotPassword = async () => {
         if (!forgotPasswordEmail || !forgotPasswordEmail.includes('@')) {
             setForgotPasswordError('Please enter a valid email address.');
