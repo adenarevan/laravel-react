@@ -5,6 +5,10 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css"; // Quill editor styles
 import { FaEdit, FaTrash } from "react-icons/fa";
 
+import { router } from "@inertiajs/react"; // ✅ Tambahkan ini
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const Article = ({ menus, articles }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -14,53 +18,98 @@ const Article = ({ menus, articles }) => {
     title: "",
     content: "",
     image: null,
+    prevImage: null,
   });
 
   const openModal = (article = null) => {
     if (article) {
-      setIsEdit(true);
-      setEditId(article.id);
-      setData({
-        title: article.title,
-        content: article.content,
-        image: null,
-      });
+        setIsEdit(true);
+        setEditId(article.id);
+        setData({
+            title: article.title,
+            content: article.content,
+            image: null, // ❌ Tidak langsung diisi karena input file tidak bisa dikontrol
+            prevImage: article.image, // ✅ Simpan gambar sebelumnya
+        });
     } else {
-      setIsEdit(false);
-      reset();
+        setIsEdit(false);
+        reset();
     }
     setIsModalOpen(true);
-  };
-
-  const handleSubmit = (e) => {
+};
+const handleSubmit = (e) => {
     e.preventDefault();
-    if (isEdit) {
-      put(`/article/${editId}`, {
-        onSuccess: () => {
-          reset();
-          setIsModalOpen(false);
-        },
-      });
-    } else {
-      post("/article", {
-        onSuccess: () => {
-          reset();
-          setIsModalOpen(false);
-        },
-      });
+
+    const formData = new FormData();
+    formData.append("title", data.title);
+    formData.append("content", data.content);
+    
+    // ✅ Jika ada gambar baru, kirim gambar baru, jika tidak, kirim gambar lama
+    if (data.image) {
+        formData.append("image", data.image);
+    } else if (data.prevImage) {
+        formData.append("prevImage", data.prevImage);
     }
-  };
+
+    if (isEdit) {
+        put(`/article/${editId}`, {
+            data: formData,
+            onSuccess: () => {
+                reset();
+                setIsModalOpen(false);
+            },
+            headers: {
+                "Content-Type": "multipart/form-data", // ✅ Pastikan ini untuk upload file
+            },
+        });
+    } else {
+        post("/article", {
+            data: formData,
+            onSuccess: () => {
+                reset();
+                setIsModalOpen(false);
+            },
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+    }
+};
+
+
+
 
   const handleDelete = (id) => {
     if (confirm("Apakah Anda yakin ingin menghapus artikel ini?")) {
-      post(`/article/${id}`, {
-        method: "delete",
-        onSuccess: () => {
-          alert("Artikel berhasil dihapus.");
-        },
-      });
+        router.delete(`/article/${id}`, {
+            onSuccess: () => {
+                toast.success("Artikel berhasil dihapus! 🎉", {
+                    position: "top-right",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    theme: "colored",
+                });
+            },
+            onError: (errors) => {
+                toast.error("Gagal menghapus artikel. ❌", {
+                    position: "top-right",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    theme: "colored",
+                });
+                console.error(errors);
+            },
+        });
     }
-  };
+};
+
+
 
   return (
     <Layout menus={menus}>
@@ -113,14 +162,26 @@ const Article = ({ menus, articles }) => {
             {errors.content && <div className="text-red-500 text-sm">{errors.content}</div>}
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-2">Gambar</label>
-            <input
-              type="file"
-              className="w-full border px-4 py-2 rounded-lg"
-              onChange={(e) => setData("image", e.target.files[0])}
-            />
-            {errors.image && <div className="text-red-500 text-sm">{errors.image}</div>}
-          </div>
+    <label className="block text-gray-700 font-medium mb-2">Gambar</label>
+
+                {/* ✅ Pratinjau gambar sebelumnya */}
+                {data.prevImage && !data.image && (
+                    <img
+                        src={`/storage/${data.prevImage}`}
+                        alt="Gambar Lama"
+                        className="w-32 h-32 object-cover rounded-lg mb-2"
+                    />
+                )}
+
+                <input
+                    type="file"
+                    className="w-full border px-4 py-2 rounded-lg"
+                    onChange={(e) => setData("image", e.target.files[0])}
+                />
+
+                {errors.image && <div className="text-red-500 text-sm">{errors.image}</div>}
+            </div>
+
           <div className="flex justify-end space-x-2">
             <button
               type="button"

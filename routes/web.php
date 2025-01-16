@@ -151,6 +151,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/article', [ArticleController::class, 'store'])->name('article.store');
     Route::put('/article/{article}', [ArticleController::class, 'update'])->name('article.update');
     Route::delete('/article/{article}', [ArticleController::class, 'destroy'])->name('article.destroy');
+    
     Route::get('/article/{article}', [ArticleController::class, 'show'])->name('article.show');
 
 });
