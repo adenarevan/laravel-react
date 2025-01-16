@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -9,7 +9,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Auth\PasswordResetController;
-
+use App\Models\Article;
 
 use App\Http\Controllers\AuthController;
 /*
@@ -23,14 +23,17 @@ use App\Http\Controllers\AuthController;
 |
 */
 
+
+
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
+        'articles' => Article::with('user')->latest()->take(5)->get(), // Muat relasi user
     ]);
-});
+})->name('welcome');
 
 // Route::get('/dashboard', function () {
 //     return Inertia::render('Dashboard');
@@ -95,6 +98,7 @@ Route::get('/dashboard', function () {
             ['name' => 'Home', 'route' => '/dashboard', 'icon' => 'FaHome'], // Halaman utama
             ['name' => 'About Me', 'route' => '/about', 'icon' => 'FaUser'], // Tentang pengguna
             ['name' => 'Contact', 'route' => '/contact', 'icon' => 'FaEnvelope'], // Halaman kontak
+            ['name' => 'Articel', 'route' => '/article', 'icon' => 'FaNewspaper'], // Halaman article
         ],
     ]);
 })->middleware(['auth'])->name('dashboard');
@@ -128,22 +132,31 @@ Route::get('/about', function () {
         'menus' => [
             ['name' => 'Home', 'route' => '/dashboard', 'icon' => 'FaHome'],
             ['name' => 'About Me', 'route' => '/about', 'icon' => 'FaUser'],
-            ['name' => 'Contact', 'route' => '/contact', 'icon' => 'FaEnvelope'],
+            ['name' => 'Contact', 'route' => '/contact', 'icon' => 'FaEnvelope'], 
+            ['name' => 'Articel', 'route' => '/article', 'icon' => 'FaNewspaper'], // Halaman article
         ],
     ]);
 })->middleware(['auth'])->name('about');
 
 
+// Route Artikel Detail
+Route::get('/article/{id}', function ($id) {
+    return Inertia::render('ArticleDetail', [
+        'article' => Article::with('user')->findOrFail($id),
+    ]);
+})->name('article.detail');
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/article', [ArticleController::class, 'index'])->name('article.index');
+    Route::post('/article', [ArticleController::class, 'store'])->name('article.store');
+    Route::put('/article/{article}', [ArticleController::class, 'update'])->name('article.update');
+    Route::delete('/article/{article}', [ArticleController::class, 'destroy'])->name('article.destroy');
+    Route::get('/article/{article}', [ArticleController::class, 'show'])->name('article.show');
 
-Route::get('/db-test', function () {
-    try {
-        DB::connection()->getPdo();
-        return "Connected to database: " . DB::connection()->getDatabaseName();
-    } catch (\Exception $e) {
-        return "Connection failed: " . $e->getMessage();
-    }
 });
+
+
+
 
 
 require __DIR__.'/auth.php';

@@ -29,7 +29,7 @@ class AuthController extends Controller
             ]);
         }
     
-        \Log::error('Login failed: invalid credentials', $credentials);
+        \Log::error('Login failed: Invalid credentials ', $credentials);
     
         throw ValidationException::withMessages([
             'email' => 'The provided credentials are incorrect.',

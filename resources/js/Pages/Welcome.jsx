@@ -1,19 +1,47 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Head } from "@inertiajs/react";
 import { gsap } from "gsap";
+import { Link } from "@inertiajs/react";
 
-export default function Welcome({ auth }) {
+export default function Welcome({ auth, articles }) {
     const [menuOpen, setMenuOpen] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(true);
     const [score, setScore] = useState(0);
     const [message, setMessage] = useState("Catch me if you can!");
     const [circlePosition, setCirclePosition] = useState({ top: "50%", left: "50%" });
+    const carouselRef = useRef(null);
 
     const modalRef = useRef(null);
     const heroTextRef = useRef(null);
     const heroSubTextRef = useRef(null);
     const heroButtonRef = useRef(null);
     const circleRef = useRef(null);
+
+
+    useEffect(() => {
+        if (carouselRef.current) {
+            const totalWidth = carouselRef.current.scrollWidth; // Total lebar konten
+
+            gsap.fromTo(
+                carouselRef.current,
+                { x: "0px" }, // Mulai dari kiri pojok
+                {
+                    x: `-${totalWidth}px`, // Geser ke kiri penuh
+                    duration: 25, // Lebih smooth
+                    ease: "linear",
+                    repeat: -1, // Loop tanpa henti
+                    modifiers: {
+                        x: (x) => {
+                            const val = parseFloat(x) % totalWidth; // Reset posisi saat looping
+                            return `${val}px`;
+                        },
+                    },
+                }
+            );
+        }
+    }, [articles]);
+    
+
 
     useEffect(() => {
         gsap.fromTo(
@@ -52,6 +80,10 @@ export default function Welcome({ auth }) {
     const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
     const closeMenu = () => setMenuOpen(false);
+
+    useEffect(() => {
+        console.log(articles); // Debugging untuk memastikan data artikel dan user
+      }, [articles]);
 
     return (
         <>
@@ -261,6 +293,60 @@ export default function Welcome({ auth }) {
                         This page showcases creativity in web development with React and Laravel Inertia. Explore the interactive features, including games and dynamic content, designed to provide an engaging user experience.
                     </p>
                 </section>
+
+
+
+
+                <section
+            id="articles"
+            className={`py-20 px-6 md:px-12 relative overflow-hidden ${
+                isDarkMode ? "bg-gradient-to-r from-gray-800 via-gray-900 to-black text-white" : 
+                             "bg-gradient-to-r from-gray-200 via-gray-100 to-white text-gray-900"
+            }`}
+        >
+            <h2 className="text-5xl font-bold text-center mb-10">Artikel Terbaru</h2>
+
+            {/* Efek gradient di sisi kiri & kanan */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black/10 to-transparent pointer-events-none"></div>
+
+            {/* Container Carousel */}
+            <div className="relative w-full overflow-hidden">
+                <div ref={carouselRef} className="flex space-x-8 w-max">
+                    {articles.map((article) => (
+                        <div
+                            key={article.id}
+                            className="bg-white text-gray-800 rounded-lg shadow-lg overflow-hidden w-80 flex-shrink-0 transform hover:scale-105 transition-transform duration-500 hover:shadow-2xl"
+                            style={{ minWidth: "320px" }}
+                        >
+                            {/* Gambar Artikel */}
+                            {article.image && (
+                                <img
+                                    src={`/storage/${article.image}`}
+                                    alt={article.title}
+                                    className="w-full h-48 object-cover rounded-t-lg"
+                                />
+                            )}
+                            <div className="p-5">
+                                <h3 className="text-xl font-bold mb-3 hover:text-blue-500 transition-colors">
+                                    {article.title}
+                                </h3>
+                                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                                    {article.content.slice(0, 100)}...
+                                </p>
+                                <p className="text-xs text-gray-500 mb-4">
+                                    By {article.user?.name || "Unknown User"}
+                                </p>
+                                <Link href={route("article.detail", { id: article.id })} className="text-blue-500 font-semibold hover:underline">
+                                        Baca Selengkapnya
+                                    </Link>
+
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+
 
                 {/* Footer */}
                 <footer className="py-10 bg-gradient-to-br from-gray-900 via-gray-800 to-black text-center text-white">
