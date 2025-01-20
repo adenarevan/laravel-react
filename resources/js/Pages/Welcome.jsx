@@ -330,9 +330,10 @@ export default function Welcome({ auth, articles }) {
                                 <h3 className="text-xl font-bold mb-3 hover:text-blue-500 transition-colors">
                                     {article.title}
                                 </h3>
-                                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                                    {article.content.slice(0, 100)}...
-                                </p>
+                                <p className="text-sm text-gray-600 mb-4 line-clamp-2" dangerouslySetInnerHTML={{
+                                    __html: article.content.slice(0, 100).replace(/<p>/g, "").replace(/<\/p>/g, "") + "..."
+                                }}></p>
+
                                 <p className="text-xs text-gray-500 mb-4">
                                     By {article.user?.name || "Unknown User"}
                                 </p>
